@@ -51,7 +51,7 @@ git clean -xdf
 
 #./build-android.sh --boost=1.69.0 --toolchain=llvm --prefix=$(dirname ${PREFIX}) --arch=$ABI --target-version=28 ${ANDROID_NDK_ROOT}
 
-./build-android.sh --boost=1.69.0 --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
+./build-android.sh --boost=1.78.0 --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
 popd
 }
 
