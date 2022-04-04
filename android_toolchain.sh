@@ -2,17 +2,16 @@
 
 source ./build_system_setup.sh $2
 
-export NDK_VERSION=23.1.7779620
-#export NDK_VERSION=21.3.6528147
+#export NDK_VERSION=23.1.7779620
+export NDK_VERSION=21.3.6528147
 export API=26 # need ABI at least 28 for glob from my tests
 export APP_PLATFORM=${API}
 export ANDROID_SDK_BUILD_TOOLS=30.0.3
 #export JOBS=$(getconf _NPROCESSORS_ONLN)
 export JOBS=9
-export
 export HOST_ARCH=linux-x86_64
 
-if [ $# -ne 1 ]; then
+if [ $# -lt 1 ]; then
 	ARG1=aarch64
 else
 	ARG1=$1
@@ -52,7 +51,8 @@ export TARGET_BINUTILS=i686-linux-android
 #################################
 fi
 
-export WORKDIR=$BUILD_ROOT/deps_build_$TARGET_PREFIX
+export BUILDDIR=build_${TARGET_PREFIX}_api${API}_ndk${NDK_VERSION:0:2}_${BUILD_TYPE}
+export WORKDIR=$SCRIPT_HOME_DIR/$BUILDDIR
 
 # This is just an empty directory where I want the built objects to be installed
 export DEV_PREFIX=$WORKDIR/out
@@ -77,15 +77,15 @@ export CXX=$TOOLCHAIN/bin/$TARGET_PREFIX$API-clang++
 export CPP="$CC -E"
 export AR=$TOOLCHAIN/bin/llvm-ar
 export AS=${CC}
-export NM=$TOOLCHAIN/bin/${TARGET_BINUTILS}-nm
-export STRIP=${TOOLCHAIN_BIN}/arm-linux-androideabi-strip
-export READELF=$TOOLCHAIN/bin/${TARGET_BINUTILS}-readelf
-export LD=$TOOLCHAIN/bin/${TARGET_BINUTILS}-ld
+export NM=$TOOLCHAIN/bin/llvm-nm
+export STRIP=$TOOLCHAIN/bin/llvm-strip
+export READELF=$TOOLCHAIN/bin/llvm-readelf
+export LD=$TOOLCHAIN/bin/ld.lld
 export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+export STRIPLINK=$TOOLCHAIN/bin/${TARGET_BINUTILS}-strip
 
 export CFLAGS="-I${SYSROOT}/include -I${SYSROOT}/usr/include -I${TOOLCHAIN}/include -I${DEV_PREFIX}/include -fPIC"
 export STAGING_DIR=${DEV_PREFIX}
-#export CFLAGS="--sysroot=${SYSROOT} -I${SYSROOT}/include -I${SYSROOT}/usr/include -I${TOOLCHAIN}/include -I${DEV_PREFIX}/include -fPIC"
 export CPPFLAGS="-fexceptions -frtti ${CFLAGS} "
 export LDFLAGS_COMMON="-L${SYSROOT}/usr/lib/$TARGET_BINUTILS/$API -L${TOOLCHAIN}/lib -L${DEV_PREFIX} -L${DEV_PREFIX}/lib"
 export LDFLAGS="$LDFLAGS_COMMON"
@@ -96,7 +96,7 @@ echo QT_INSTALL_PREFIX=$QT_INSTALL_PREFIX
 echo JDK=$JDK
 echo NDK_VERSION=$NDK_VERSION
 echo JOBS=$JOBS
-echo BUILD_ROOT=$BUILD_ROOT
+echo SCRIPT_HOME_DIR=$SCRIPT_HOME_DIR
 #echo
 echo $TARGET_PREFIX$API
 #if [ $TARGET_PREFIX = "NO_ABI" ]; then

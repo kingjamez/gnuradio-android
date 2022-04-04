@@ -11,7 +11,7 @@ set -xe
 #export SYS_ROOT=$SYSROOT
 export PATH=${TOOLCHAIN_BIN}:${PATH}
 export PREFIX=$DEV_PREFIX
-export BUILD_FOLDER=./build_${ABI}_${BUILD_TYPE}
+export BUILD_FOLDER=./$BUILDDIR
 #export PREFIX=${BUILD_ROOT}/toolchain/$ABI
 
 mkdir -p ${PREFIX}
@@ -51,7 +51,7 @@ git clean -xdf
 
 #./build-android.sh --boost=1.69.0 --toolchain=llvm --prefix=$(dirname ${PREFIX}) --arch=$ABI --target-version=28 ${ANDROID_NDK_ROOT}
 
-./build-android.sh --boost=1.78.0 --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
+./build-android.sh --boost=1.69.0 --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
 popd
 }
 
