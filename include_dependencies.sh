@@ -20,6 +20,7 @@ echo $SYS_ROOT $BUILD_ROOT $PATH $PREFIX
 
 build_with_cmake() {
         cp ${BUILD_ROOT}/android_cmake.sh .
+        echo "$CURRENT_BUILD - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
         rm -rf $BUILD_FOLDER
         mkdir -p $BUILD_FOLDER
         echo $PWD
@@ -31,6 +32,7 @@ build_with_cmake() {
 
 android_configure() {
         cp ${BUILD_ROOT}/android_configure.sh .
+        echo "$CURRENT_BUILD - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
         ./android_configure.sh $@
         make -j$JOBS LDFLAGS="$LDFLAGS"
         make -j$JOBS install
@@ -48,6 +50,7 @@ build_boost() {
 
 pushd ${BUILD_ROOT}/Boost-for-Android
 git clean -xdf
+export CURRENT_BUILD=boost-for-android
 
 #./build-android.sh --boost=1.69.0 --toolchain=llvm --prefix=$(dirname ${PREFIX}) --arch=$ABI --target-version=28 ${ANDROID_NDK_ROOT}
 
@@ -66,6 +69,7 @@ move_boost_libs() {
 build_libzmq() {
 pushd ${BUILD_ROOT}/libzmq
 git clean -xdf
+export CURRENT_BUILD=libzmq
 
 ./autogen.sh
 ./configure --enable-shared --disable-static --build=x86_64-unknown-linux-gnu --host=$TARGET_PREFIX$API --prefix=${PREFIX} LDFLAGS="-L${PREFIX}/lib" CPPFLAGS="-fPIC -I${PREFIX}/include"
@@ -88,6 +92,7 @@ pushd ${BUILD_ROOT}/fftw
 # rm -rf fftw-3.3.9
 # tar xvf fftw-3.3.9.tar.gz
 git clean -xdf
+export CURRENT_BUILD=fftw
 
 if [ "$ABI" = "armeabi-v7a" ] || [ "$ABI" = "arm64-v8a" ]; then
 	NEON_FLAG=--enable-neon
@@ -113,6 +118,7 @@ popd
 build_openssl() {
 pushd ${BUILD_ROOT}/openssl
 git clean -xdf
+export CURRENT_BUILD=openssl
 
 export ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}
 
@@ -128,6 +134,7 @@ popd
 build_thrift() {
 pushd ${BUILD_ROOT}/thrift
 git clean -xdf
+export CURRENT_BUILD=thrift
 rm -rf ${PREFIX}/include/thrift
 
 ./bootstrap.sh
@@ -160,6 +167,7 @@ pushd ${BUILD_ROOT}/libgmp
 ABI_BACKUP=$ABI
 ABI=""
 git clean -xdf
+export CURRENT_BUILD=libgmp
 
 ./.bootstrap
 ./configure --enable-maintainer-mode --prefix=${PREFIX} \
@@ -181,6 +189,7 @@ pushd ${BUILD_ROOT}/libusb/android/jni
 # https://github.com/libusb/libusb/pull/874
 
 git clean -xdf
+export CURRENT_BUILD=libusb
 
 export NDK=${ANDROID_NDK_ROOT}
 ${NDK}/ndk-build clean
@@ -198,6 +207,7 @@ popd
 build_hackrf() {
 pushd ${BUILD_ROOT}/hackrf/host/
 git clean -xdf
+export CURRENT_BUILD=hackrf
 
 mkdir build
 cd build
@@ -221,6 +231,7 @@ popd
 build_volk() {
 pushd ${BUILD_ROOT}/volk
 git clean -xdf
+export CURRENT_BUILD=volk
 
 mkdir build
 cd build
@@ -251,6 +262,7 @@ popd
 build_gnuradio() {
 pushd ${BUILD_ROOT}/gnuradio
 git clean -xdf
+export CURRENT_BUILD=gnuradio
 
 mkdir build
 cd build
@@ -299,6 +311,7 @@ popd
 build_gr-osmosdr() {
 pushd ${BUILD_ROOT}/gr-osmosdr
 git clean -xdf
+export CURRENT_BUILD=gr-osmosdr
 
 mkdir build
 cd build
@@ -329,6 +342,7 @@ popd
 build_gr-grand() {
 pushd ${BUILD_ROOT}/gr-grand
 git clean -xdf
+export CURRENT_BUILD=gr-grand
 
 mkdir build
 cd build
@@ -358,6 +372,7 @@ popd
 build_gr-sched() {
 pushd ${BUILD_ROOT}/gr-sched
 git clean -xdf
+export CURRENT_BUILD=gr-sched
 
 mkdir build
 cd build
@@ -388,6 +403,7 @@ popd
 build_libxml2 () {
         pushd ${BUILD_ROOT}/libxml2
         git clean -xdf
+        export CURRENT_BUILD=libxml2
 
 	build_with_cmake -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_TESTS=OFF -DLIBXML2_WITH_ZLIB=OFF
 
@@ -400,6 +416,7 @@ build_libxml2 () {
 build_libiio () {
         pushd ${BUILD_ROOT}/libiio
         git clean -xdf
+        export CURRENT_BUILD=libiio
 
 	build_with_cmake -DHAVE_DNS_SD=OFF
 
@@ -412,6 +429,7 @@ build_libiio () {
 build_libad9361 () {
         pushd ${BUILD_ROOT}/libad9361-iio
         git clean -xdf
+        export CURRENT_BUILD=libad9361-iio
 
 	build_with_cmake
 
@@ -424,6 +442,7 @@ build_libad9361 () {
 build_gr-iio () {
         pushd ${BUILD_ROOT}/gr-iio
         git clean -xdf
+        export CURRENT_BUILD=gr-iio
 
 	build_with_cmake -DWITH_PYTHON=OFF
 
@@ -437,6 +456,7 @@ build_libiconv () {
 
         pushd ${BUILD_ROOT}/libiconv
 	git clean -xdf
+        export CURRENT_BUILD=libiconv
 
         LDFLAGS="$LDFLAGS_COMMON"
         android_configure --enable-static=no --enable-shared=yes
@@ -450,6 +470,7 @@ build_libiconv () {
 build_libffi() {
         pushd ${BUILD_ROOT}/libffi
         git clean -xdf
+        export CURRENT_BUILD=libffi
 
 #        ./autogen.sh
         LDFLAGS="$LDFLAGS_COMMON"
@@ -464,6 +485,7 @@ build_libffi() {
 build_gettext() {
         pushd ${BUILD_ROOT}/gettext
         git clean -xdf
+        export CURRENT_BUILD=gettext
 
         LDFLAGS="$LDFLAGS_COMMON"
 #	NOCONFIGURE=yes ./autogen.sh
@@ -478,6 +500,7 @@ build_gettext() {
 build_uhd() {
 cd ${BUILD_ROOT}/uhd/host
 git clean -xdf
+export CURRENT_BUILD=uhd
 
 mkdir build
 cd build
@@ -523,6 +546,7 @@ make install
 build_rtl-sdr() {
 cd ${BUILD_ROOT}/rtl-sdr
 git clean -xdf
+export CURRENT_BUILD=rtl-sdr
 
 mkdir build
 cd build
@@ -546,6 +570,7 @@ make install
 build_gr-ieee-802-15-4() {
 cd ${BUILD_ROOT}/gr-ieee802-15-4
 git clean -xdf
+export CURRENT_BUILD=gr-ieee-802-15-4
 
 mkdir build
 cd build
@@ -575,6 +600,7 @@ make install
 build_gr-ieee-802-11() {
 cd ${BUILD_ROOT}/gr-ieee802-11
 git clean -xdf
+export CURRENT_BUILD=gr-ieee802-11
 
 mkdir build
 cd build
@@ -604,6 +630,7 @@ make install
 build_gr-clenabled() {
  cd ${BUILD_ROOT}/gr-clenabled
  git clean -xdf
+ export CURRENT_BUILD=gr-clenabled
 
  mkdir build
  cd build
