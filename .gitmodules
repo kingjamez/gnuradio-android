@@ -12,7 +12,7 @@
 	url = https://github.com/apache/thrift.git
 [submodule "volk"]
 	path = volk
-	url = https://github.com/bastibl/volk.git
+	url = https://github.com/cseci/volk.git
 [submodule "gnuradio"]
 	path = gnuradio
 	url = https://github.com/adisuciu/gnuradio.git
