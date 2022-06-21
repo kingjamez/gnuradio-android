@@ -1,37 +1,49 @@
 set -xe
 
-#############################################################
-### CONFIG
-#############################################################
+reset_build_env() {
+	rm -rf $WORKDIR
+	mkdir -p $WORKDIR
+	cd $WORKDIR
+}
 
-#############################################################
-### DERIVED CONFIG
-#############################################################
+create_build_status_file() {
+	touch $BUILD_STATUS_FILE
+	echo "NDK - $NDK_VERSION" >> $BUILD_STATUS_FILE
+	echo "ANDROID API - $API" >> $BUILD_STATUS_FILE
+	echo "ABI - $ABI" >> $BUILD_STATUS_FILE
+	echo "JDK - $JDK" >> $BUILD_STATUS_FILE
+	echo "Qt - $QT_VERSION_STRING" >> $BUILD_STATUS_FILE
+	pushd $GR4A_SCRIPT_DIR
+	echo "scopy-android-deps - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
+	pushd $GR4A_SCRIPT_DIR
+	echo "gnuradio-android - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
+}
 
 #export SYS_ROOT=$SYSROOT
 export PATH=${TOOLCHAIN_BIN}:${PATH}
 export PREFIX=$DEV_PREFIX
 export BUILD_FOLDER=./$BUILDDIR
-#export PREFIX=${BUILD_ROOT}/toolchain/$ABI
+#export PREFIX=${GR4A_SCRIPT_DIR}/toolchain/$ABI
 
 mkdir -p ${PREFIX}
 
-echo $SYS_ROOT $BUILD_ROOT $PATH $PREFIX
+echo $SYS_ROOT $GR4A_SCRIPT_DIR $PATH $PREFIX
 
 build_with_cmake() {
-        cp ${BUILD_ROOT}/android_cmake.sh .
+        cp ${GR4A_SCRIPT_DIR}/android_cmake.sh .
         echo "$CURRENT_BUILD - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
         rm -rf $BUILD_FOLDER
         mkdir -p $BUILD_FOLDER
         echo $PWD
-        ./android_cmake.sh $@ -DCMAKE_VERBOSE_MAKEFILE=ON .
+        ./android_cmake.sh $@  \
+        -DCMAKE_VERBOSE_MAKEFILE=ON .
         cd $BUILD_FOLDER
         make -j$JOBS
         make -j$JOBS install
 }
 
 android_configure() {
-        cp ${BUILD_ROOT}/android_configure.sh .
+        cp ${GR4A_SCRIPT_DIR}/android_configure.sh .
         echo "$CURRENT_BUILD - $(git rev-parse --short HEAD)" >> $BUILD_STATUS_FILE
         ./android_configure.sh $@
         make -j$JOBS LDFLAGS="$LDFLAGS"
@@ -48,7 +60,7 @@ build_boost() {
 
 ## ADI COMMENT PULL LATEST
 
-pushd ${BUILD_ROOT}/Boost-for-Android
+pushd ${GR4A_SCRIPT_DIR}/Boost-for-Android
 git clean -xdf
 export CURRENT_BUILD=boost-for-android
 
@@ -67,12 +79,13 @@ move_boost_libs() {
 #############################################################
 
 build_libzmq() {
-pushd ${BUILD_ROOT}/libzmq
+pushd ${GR4A_SCRIPT_DIR}/libzmq
 git clean -xdf
 export CURRENT_BUILD=libzmq
 
 ./autogen.sh
-./configure --enable-shared --disable-static --build=x86_64-unknown-linux-gnu --host=$TARGET_PREFIX$API --prefix=${PREFIX} LDFLAGS="-L${PREFIX}/lib" CPPFLAGS="-fPIC -I${PREFIX}/include"
+cp ../android_configure.sh .
+./android_configure.sh --enable-shared --disable-static --build=x86_64-unknown-linux-gnu --host=$TARGET_PREFIX$API --prefix=${PREFIX} LDFLAGS="-L${PREFIX}/lib" CPPFLAGS="-fPIC -I${PREFIX}/include"
 
 make -j ${JOBS}
 make install
@@ -87,7 +100,7 @@ popd
 #############################################################
 build_fftw() {
 ## ADI COMMENT: USE downloaded version instead (OCAML fail?)
-pushd ${BUILD_ROOT}/fftw
+pushd ${GR4A_SCRIPT_DIR}/fftw
 #wget http://www.fftw.org/fftw-3.3.9.tar.gz
 # rm -rf fftw-3.3.9
 # tar xvf fftw-3.3.9.tar.gz
@@ -116,13 +129,17 @@ popd
 ### OPENSSL
 #############################################################
 build_openssl() {
-pushd ${BUILD_ROOT}/openssl
+pushd ${GR4A_SCRIPT_DIR}/openssl
 git clean -xdf
 export CURRENT_BUILD=openssl
 
 export ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}
 
-./Configure android-arm -D__ARM_MAX_ARCH__=7 --prefix=${PREFIX} shared no-ssl3 no-comp
+if [ $ABI = "arm64-v8a" ]; then
+./Configure shared android-arm64 --prefix=${PREFIX} -D__ANDROID_API__=21
+else
+./Configure shared android-arm --prefix=${PREFIX} -D__ANDROID_API__=21
+fi
 make -j ${JOBS}
 make install
 popd
@@ -132,19 +149,20 @@ popd
 ### THRIFT
 #############################################################
 build_thrift() {
-pushd ${BUILD_ROOT}/thrift
+pushd ${GR4A_SCRIPT_DIR}/thrift
 git clean -xdf
 export CURRENT_BUILD=thrift
 rm -rf ${PREFIX}/include/thrift
 
 ./bootstrap.sh
 
-CPPFLAGS="-I${PREFIX}/include" \
-CFLAGS="-fPIC" \
-CXXFLAGS="-fPIC" \
-LDFLAGS="-L${PREFIX}/lib" \
-./configure --prefix=${PREFIX}   --disable-tests --disable-tutorial --with-cpp \
- --without-python --without-qt4 --without-qt5 --without-py3 --without-go --without-nodejs --without-c_glib --without-php --without-csharp --without-java \
+# CPPFLAGS="-I${PREFIX}/include" \
+# CFLAGS="-fPIC" \
+# CXXFLAGS="-fPIC" \
+# LDFLAGS="-L${PREFIX}/lib" \
+cp ../android_configure.sh .
+./android_configure.sh --prefix=${PREFIX}   --disable-tests --disable-tutorial --with-cpp \
+ --without-python --without-kotlin --without-qt4 --without-qt5 --without-py3 --without-go --without-nodejs --without-c_glib --without-php --without-csharp --without-java \
  --without-libevent --without-zlib \
  --with-boost=${PREFIX} --host=$TARGET_BINUTILS --build=x86_64-linux
 
@@ -163,7 +181,7 @@ popd
 ### GMP
 #############################################################
 build_libgmp() {
-pushd ${BUILD_ROOT}/libgmp
+pushd ${GR4A_SCRIPT_DIR}/libgmp
 ABI_BACKUP=$ABI
 ABI=""
 git clean -xdf
@@ -183,7 +201,7 @@ popd
 ### LIBUSB
 #############################################################
 build_libusb() {
-pushd ${BUILD_ROOT}/libusb/android/jni
+pushd ${GR4A_SCRIPT_DIR}/libusb/android/jni
 # WE NEED TO USE BetterAndroidSupport PR from libusb
 # this will be merged to mainline soon
 # https://github.com/libusb/libusb/pull/874
@@ -195,41 +213,183 @@ export NDK=${ANDROID_NDK_ROOT}
 ${NDK}/ndk-build clean
 ${NDK}/ndk-build -B -r -R
 
-cp ${BUILD_ROOT}/libusb/android/libs/$ABI/* ${PREFIX}/lib
+cp ${GR4A_SCRIPT_DIR}/libusb/android/libs/$ABI/* ${PREFIX}/lib
 cp ${PREFIX}/lib/libusb1.0.so $PREFIX/lib/libusb-1.0.so # IDK why this happens (?)
-cp ${BUILD_ROOT}/libusb/libusb/libusb.h ${PREFIX}/include
+cp ${GR4A_SCRIPT_DIR}/libusb/libusb/libusb.h ${PREFIX}/include
 popd
 }
+
+build_python() {
+	pushd $GR4A_SCRIPT_DIR/python
+
+	# Python should be cross-built with the same version that is available on host, if nothing is available, it should be built with the script ./build_host_python
+	git clean -xdf
+	export CURRENT_BUILD=python
+        autoupdate
+	autoreconf
+	cp ../android_configure.sh .
+	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules
+	sed -i "s/^#zlib/zlib/g" Modules/Setup
+	sed -i "s/^#math/math/g" Modules/Setup
+	sed -i "s/^#time/time/g" Modules/Setup
+	sed -i "s/^#_struct/_struct/g" Modules/Setup
+
+	#if [ $ABI == "arm64-v8a" ]; then
+#		LINTL=-lintl
+#	fi
+
+	make -j$JOBS LDFLAGS="$LDFLAGS $LINTL -liconv -lz -lm"  install
+	rm -rf $DEV_PREFIX/lib/python3.8/test
+
+	popd
+
+}
+
 
 #############################################################
 ### HACK RF
 #############################################################
 build_hackrf() {
-pushd ${BUILD_ROOT}/hackrf/host/
+pushd ${GR4A_SCRIPT_DIR}/hackrf/host/
 git clean -xdf
 export CURRENT_BUILD=hackrf
 
-mkdir build
-cd build
+build_with_cmake --trace --trace-source=/home/adi/src/scopy-android-deps/gnuradio-android/hackrf/host/libhackrf/CMakeLists.txt ../
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
-  -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-  -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=$ABI -DANDROID_ARM_NEON=ON \
-  -DANDROID_NATIVE_API_LEVEL=${API} \
-  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
-  ../
-
-make -j ${JOBS}
-make install
 popd
+}
+
+
+build_qwt() {
+	pushd $GR4A_SCRIPT_DIR/qwt
+	git clean -xdf
+	export CURRENT_BUILD=qwt
+
+	echo $ANDROID_NDK_ROOT
+	$QMAKE ANDROID_ABIS="$ABI" ANDROID_MIN_SDK_VERSION=$API ANDROID_API_VERSION=$API INCLUDEPATH=$DEV_PREFIX/include LIBS=-L$DEV_PREFIX/lib qwt.pro
+	make -j$JOBS
+	make -j$JOBS INSTALL_ROOT=$DEV_PREFIX install
+	popd
+
+}
+
+move_qwt_libs (){
+	cp -R $DEV_PREFIX/usr/local/* $DEV_PREFIX/
+	cp -R $DEV_PREFIX/libs/$ABI/* $DEV_PREFIX/lib # another hack
+	cp -R $QT_INSTALL_PREFIX/lib/libQt${QT_MAJOR_VERSION}PrintSupport*.so $DEV_PREFIX/lib
+}
+
+move_boost_libs() {
+	cp -R $DEV_PREFIX/$ABI/* $DEV_PREFIX
+}
+
+
+
+build_spdlog() {
+	pushd ${GR4A_SCRIPT_DIR}/spdlog
+	git clean -xdf
+	export CURRENT_BUILD=spdlog
+
+	rm -rf build
+	mkdir build
+	cd build
+	build_with_cmake  \
+	-DSPDLOG_BUILD_SHARED=ON \
+	../
+
+
+	make -j ${JOBS}
+	make install
+	popd
+
+}
+
+build_portaudio() {
+        export CURRENT_BUILD=portaudio
+        pushd ${GR4A_SCRIPT_DIR}/${CURRENT_BUILD}
+	git clean -xdf
+
+        LDFLAGS="$LDFLAGS_COMMON"
+        android_configure --enable-static=no --enable-shared=yes --with-alsa=on --with-oss=on
+
+        popd
+
+}
+
+build_libsndfile() {
+
+	pushd ${GR4A_SCRIPT_DIR}/libsndfile
+	git clean -xdf
+	export CURRENT_BUILD=libsndfile
+
+	rm -rf build
+	mkdir build
+	cd build
+
+	echo "$LDFLAGS_COMMON"
+
+	build_with_cmake ../
+	make
+	make install
+        popd
+
+}
+
+build_pybind() {
+        pushd ${GR4A_SCRIPT_DIR}/pybind11
+        git clean -xdf
+        export CURRENT_BUILD=pybind11
+
+        build_with_cmake  -DPYBIND11_TEST=OFF ../
+        make -j ${JOBS}
+        make install
+        popd
+}
+
+build_gnuradio3.10() {
+	pushd ${GR4A_SCRIPT_DIR}/gnuradio
+	git clean -xdf
+	export CURRENT_BUILD=gnuradio
+
+	rm -rf build
+	mkdir build
+	cd build
+
+	echo "$LDFLAGS_COMMON"
+
+        export LDFLAGS="-lpython3"
+	build_with_cmake  \
+	  -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+	  -DENABLE_INTERNAL_VOLK=OFF \
+	  -DBOOST_ROOT=${PREFIX} \
+	  -DBoost_COMPILER=-clang \
+	  -DBoost_USE_STATIC_LIBS=ON \
+	  -DBoost_ARCHITECTURE=-a32 \
+	  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
+	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/python/python\
+          -DPYTHON_HOME=${DEV_PREFIX}/lib/python3.8\
+	  -DENABLE_DOXYGEN=OFF \
+	  -DENABLE_DEFAULT=ON \
+	  -DENABLE_GNURADIO_RUNTIME=ON \
+          -DENABLE_GR_QTGUI=ON \
+	  -DENABLE_GR_ANALOG=ON\
+	  -DENABLE_GR_BLOCKS=ON\
+	  -DENABLE_GR_FFT=ON\
+	  -DENABLE_GR_FILTER=ON\
+	  -DENABLE_GR_IIO=ON \
+          -DENABLE_TESTING=OFF \
+          -DENABLE_GR_AUDIO=OFF \
+          -DENABLE_PYTHON=ON\
+          -DPythonLibs_DIR=/${DEV_PREFIX}/lib/cmake\
+ 	   ../ -Wno-dev
+	popd
 }
 
 # #############################################################
 # ### VOLK
 #############################################################
 build_volk() {
-pushd ${BUILD_ROOT}/volk
+pushd ${GR4A_SCRIPT_DIR}/volk
 git clean -xdf
 export CURRENT_BUILD=volk
 
@@ -256,60 +416,32 @@ make install
 popd
 }
 
-#############################################################
-### GNU Radio
-#############################################################
-build_gnuradio() {
-pushd ${BUILD_ROOT}/gnuradio
-git clean -xdf
-export CURRENT_BUILD=gnuradio
+build_libm2k() {
+	pushd $GR4A_SCRIPT_DIR/libm2k
+	git clean -xdf
+	export CURRENT_BUILD=libm2k
 
-mkdir build
-cd build
+	build_with_cmake -DENABLE_PYTHON=OFF -DENABLE_TOOLS=ON
 
-echo "$LDFLAGS_COMMON"
-
-$CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
-  -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-  -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=$ABI -DANDROID_ARM_NEON=ON \
-  -DANDROID_STL=c++_shared \
-  -DANDROID_NATIVE_API_LEVEL=${API} \
-  -DPYTHON_EXECUTABLE=/usr/bin/python3 \
-  -DENABLE_INTERNAL_VOLK=OFF \
-  -DBOOST_ROOT=${PREFIX} \
-  -DBoost_COMPILER=-clang \
-  -DBoost_USE_STATIC_LIBS=ON \
-  -DBoost_ARCHITECTURE=-a32 \
-  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
-  -DENABLE_DOXYGEN=OFF \
-  -DENABLE_SPHINX=OFF \
-  -DENABLE_PYTHON=OFF \
-  -DENABLE_TESTING=OFF \
-  -DENABLE_GR_FEC=OFF \
-  -DENABLE_GR_AUDIO=OFF \
-  -DENABLE_GR_DTV=OFF \
-  -DENABLE_GR_CHANNELS=OFF \
-  -DENABLE_GR_VOCODER=OFF \
-  -DENABLE_GR_TRELLIS=OFF \
-  -DENABLE_GR_WAVELET=OFF \
-  -DENABLE_GR_CTRLPORT=OFF \
-  -DENABLE_CTRLPORT_THRIFT=OFF \
-  -DCMAKE_C_FLAGS="$CFLAGS" \
-  -DCMAKE_CXX_FLAGS="$CPPFLAGS" \
-  -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS_COMMON" \
-  -DCMAKE_VERBOSE_MAKEFILE=ON \
-   ../
-make -j ${JOBS}
-make install
-popd
+	popd
 }
+
+build_gr-m2k() {
+	pushd $GR4A_SCRIPT_DIR/gr-m2k
+	git clean -xdf
+	export CURRENT_BUILD=gr-m2k
+
+	build_with_cmake -DWITH_PYTHON=OFF -DGnuradio_DIR=$DEV_PREFIX/lib/cmake/gnuradio
+
+	popd
+}
+
 
 #############################################################
 ### GR OSMOSDR
 #############################################################
 build_gr-osmosdr() {
-pushd ${BUILD_ROOT}/gr-osmosdr
+pushd ${GR4A_SCRIPT_DIR}/gr-osmosdr
 git clean -xdf
 export CURRENT_BUILD=gr-osmosdr
 
@@ -326,7 +458,7 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_COMPILER=-clang \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_ARCHITECTURE=-a32 \
-  -DGnuradio_DIR=${BUILD_ROOT}/toolchain/$ABI/lib/cmake/gnuradio \
+  -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/$ABI/lib/cmake/gnuradio \
   -DENABLE_REDPITAYA=OFF \
   -DENABLE_RFSPACE=OFF \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
@@ -340,7 +472,7 @@ popd
 ### GR GRAND
 #############################################################
 build_gr-grand() {
-pushd ${BUILD_ROOT}/gr-grand
+pushd ${GR4A_SCRIPT_DIR}/gr-grand
 git clean -xdf
 export CURRENT_BUILD=gr-grand
 
@@ -357,7 +489,7 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_COMPILER=-clang \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_ARCHITECTURE=-a32 \
-  -DGnuradio_DIR=${BUILD_ROOT}/toolchain/$ABI/lib/cmake/gnuradio \
+  -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/$ABI/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
     ../
 
@@ -370,7 +502,7 @@ popd
 ### GR SCHED
 #############################################################
 build_gr-sched() {
-pushd ${BUILD_ROOT}/gr-sched
+pushd ${GR4A_SCRIPT_DIR}/gr-sched
 git clean -xdf
 export CURRENT_BUILD=gr-sched
 
@@ -387,7 +519,7 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_COMPILER=-clang \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_ARCHITECTURE=-a32 \
-  -DGnuradio_DIR=${BUILD_ROOT}/toolchain/$ABI/lib/cmake/gnuradio \
+  -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/$ABI/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
   ../
 
@@ -401,7 +533,7 @@ popd
 ### LIBXML2
 #############################################################
 build_libxml2 () {
-        pushd ${BUILD_ROOT}/libxml2
+        pushd ${GR4A_SCRIPT_DIR}/libxml2
         git clean -xdf
         export CURRENT_BUILD=libxml2
 
@@ -414,7 +546,7 @@ build_libxml2 () {
 ### LIBIIO
 #############################################################
 build_libiio () {
-        pushd ${BUILD_ROOT}/libiio
+        pushd ${GR4A_SCRIPT_DIR}/libiio
         git clean -xdf
         export CURRENT_BUILD=libiio
 
@@ -427,7 +559,7 @@ build_libiio () {
 ### LIBAD9361
 #############################################################
 build_libad9361 () {
-        pushd ${BUILD_ROOT}/libad9361-iio
+        pushd ${GR4A_SCRIPT_DIR}/libad9361-iio
         git clean -xdf
         export CURRENT_BUILD=libad9361-iio
 
@@ -437,24 +569,11 @@ build_libad9361 () {
 }
 
 #############################################################
-### GR IIO
-#############################################################
-build_gr-iio () {
-        pushd ${BUILD_ROOT}/gr-iio
-        git clean -xdf
-        export CURRENT_BUILD=gr-iio
-
-	build_with_cmake -DWITH_PYTHON=OFF
-
-        popd
-}
-
-#############################################################
 ### LIBICONV
 #############################################################
 build_libiconv () {
 
-        pushd ${BUILD_ROOT}/libiconv
+        pushd ${GR4A_SCRIPT_DIR}/libiconv
 	git clean -xdf
         export CURRENT_BUILD=libiconv
 
@@ -468,7 +587,7 @@ build_libiconv () {
 ### LIBFFI
 #############################################################
 build_libffi() {
-        pushd ${BUILD_ROOT}/libffi
+        pushd ${GR4A_SCRIPT_DIR}/libffi
         git clean -xdf
         export CURRENT_BUILD=libffi
 
@@ -479,18 +598,34 @@ build_libffi() {
         popd
 }
 
+
+build_python_for_android() {
+
+#deinit_toolchain
+#rm -rf $GR4A_SCRIPT_DIR/kivy
+#p4a create --sdk_dir ${ANDROID_SDK_ROOT} --ndk_dir ${ANDROID_NDK_ROOT} --arch ${ABI} --android-api ${API}  --debug --bootstrap sdl2 --storage-dir $GR4A_SCRIPT_DIR/kivy --requirements=python3,numpy,sdl2,pyjnius --dist-name gnuradio
+mkdir -p $DEV_PREFIX/lib/python3.8
+mkdir -p $DEV_PREFIX/include/python3.8
+cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/libs/${ABI}/* $DEV_PREFIX/lib/
+cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/_python_bundle__${ABI}/_python_bundle/* $DEV_PREFIX/lib/python3.8/
+cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/__pycache__/* $DEV_PREFIX/lib/python3.8/
+cp -R $GR4A_SCRIPT_DIR/kivy/build/other_builds/python3/arm64-v8a__ndk_target_21/python3/Include/* $DEV_PREFIX/include/python3.8/
+
+}
+
 #############################################################
 ### GETTEXT
 #############################################################
 build_gettext() {
-        pushd ${BUILD_ROOT}/gettext
+        pushd ${GR4A_SCRIPT_DIR}/gettext
         git clean -xdf
         export CURRENT_BUILD=gettext
 
-        LDFLAGS="$LDFLAGS_COMMON"
-#	NOCONFIGURE=yes ./autogen.sh
-        android_configure --cache-file=android.cache
-
+        export LDFLAGS="$LDFLAGS_COMMON"
+	#NOCONFIGURE=yes ./autogen.sh
+	#aclocal
+        #autoreconf
+        android_configure --disable-c++ --disable-java --disable-dependency-tracking --disable-curses
         popd
 }
 
@@ -498,7 +633,7 @@ build_gettext() {
 ### UHD
 #############################################################
 build_uhd() {
-cd ${BUILD_ROOT}/uhd/host
+cd ${GR4A_SCRIPT_DIR}/uhd/host
 git clean -xdf
 export CURRENT_BUILD=uhd
 
@@ -544,20 +679,10 @@ make install
 ### RTL SDR
 #############################################################
 build_rtl-sdr() {
-cd ${BUILD_ROOT}/rtl-sdr
+cd ${GR4A_SCRIPT_DIR}/rtl-sdr
 git clean -xdf
 export CURRENT_BUILD=rtl-sdr
-
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} \
-  -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=arm64-v8a -DANDROID_ARM_NEON=ON \
-  -DANDROID_NATIVE_API_LEVEL=${API_LEVEL} \
-  -DANDROID_STL=c++_shared \
-  -DDETACH_KERNEL_DRIVER=ON \
-  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
-  ../
+build_with_cmake -DDETACH_KERNEL_DRIVER=ON ../
 
 make -j ${NCORES}
 make install
@@ -568,7 +693,7 @@ make install
 ### GR IEEE 802.15.4
 #############################################################
 build_gr-ieee-802-15-4() {
-cd ${BUILD_ROOT}/gr-ieee802-15-4
+cd ${GR4A_SCRIPT_DIR}/gr-ieee802-15-4
 git clean -xdf
 export CURRENT_BUILD=gr-ieee-802-15-4
 
@@ -586,7 +711,7 @@ cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_USE_DEBUG_LIBS=OFF \
   -DBoost_ARCHITECTURE=-a64 \
-  -DGnuradio_DIR=${BUILD_ROOT}/toolchain/arm64-v8a/lib/cmake/gnuradio \
+  -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/arm64-v8a/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
   ../
 
@@ -598,7 +723,7 @@ make install
 ### GR IEEE 802.11
 #############################################################
 build_gr-ieee-802-11() {
-cd ${BUILD_ROOT}/gr-ieee802-11
+cd ${GR4A_SCRIPT_DIR}/gr-ieee802-11
 git clean -xdf
 export CURRENT_BUILD=gr-ieee802-11
 
@@ -616,7 +741,7 @@ cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_USE_DEBUG_LIBS=OFF \
   -DBoost_ARCHITECTURE=-a64 \
-  -DGnuradio_DIR=${BUILD_ROOT}/toolchain/arm64-v8a/lib/cmake/gnuradio \
+  -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/arm64-v8a/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
   ../
 
@@ -628,7 +753,7 @@ make install
 # ### GR CLENABLED
 # #############################################################
 build_gr-clenabled() {
- cd ${BUILD_ROOT}/gr-clenabled
+ cd ${GR4A_SCRIPT_DIR}/gr-clenabled
  git clean -xdf
  export CURRENT_BUILD=gr-clenabled
 
@@ -646,7 +771,7 @@ build_gr-clenabled() {
    -DBoost_USE_STATIC_LIBS=ON \
    -DBoost_USE_DEBUG_LIBS=OFF \
    -DBoost_ARCHITECTURE=-a64 \
-   -DGnuradio_DIR=${BUILD_ROOT}/toolchain/arm64-v8a/lib/cmake/gnuradio \
+   -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/arm64-v8a/lib/cmake/gnuradio \
    -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
    ../
 

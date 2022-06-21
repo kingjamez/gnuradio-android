@@ -1,4 +1,5 @@
 toolchain
 downloads
 .vscode/*
+build*
 deps_build_aarch64-linux-android/*

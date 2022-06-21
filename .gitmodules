@@ -15,7 +15,7 @@
 	url = https://github.com/cseci/volk.git
 [submodule "gnuradio"]
 	path = gnuradio
-	url = https://github.com/adisuciu/gnuradio.git
+	url = https://github.com/analogdevicesinc/gnuradio.git
 [submodule "libgmp"]
 	path = libgmp
 	url = https://github.com/bastibl/libgmp.git
@@ -49,9 +49,6 @@
 [submodule "gr-ieee802-11"]
 	path = gr-ieee802-11
 	url = https://github.com/bastibl/gr-ieee802-11.git
-[submodule "gr-iio"]
-	path = gr-iio
-	url = https://github.com/analogdevicesinc/gr-iio
 [submodule "libiio"]
 	path = libiio
 	url = https://github.com/analogdevicesinc/libiio
@@ -73,3 +70,30 @@
 [submodule "libiconv"]
 	path = libiconv
 	url = https://github.com/cseci/libiconv
+[submodule "qwt"]
+	path = qwt
+	url = https://github.com/cseci/qwt
+[submodule "python"]
+	path = python
+	url = https://github.com/cseci/python
+[submodule "spdlog"]
+	path = spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "libsndfile"]
+	path = libsndfile
+	url = https://github.com/libsndfile/libsndfile
+[submodule "gr-m2k"]
+	path = gr-m2k
+	url = https://github.com/analogdevicesinc/gr-m2k
+[submodule "libm2k"]
+	path = libm2k
+	url = https://github.com/analogdevicesinc/libm2k
+[submodule "pybind11"]
+	path = pybind11
+	url = https://github.com/pybind/pybind11
+[submodule "portaudio"]
+	path = portaudio
+	url = https://github.com/PortAudio/portaudio
+[submodule "python-for-android"]
+	path = python-for-android
+	url = https://github.com/kivy/python-for-android
