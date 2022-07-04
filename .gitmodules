@@ -97,3 +97,15 @@
 [submodule "python-for-android"]
 	path = python-for-android
 	url = https://github.com/kivy/python-for-android
+[submodule "numpy"]
+	path = numpy
+	url = https://github.com/numpy/numpy
+[submodule "cython"]
+	path = cython
+	url = https://github.com/cython/cython
+[submodule "build-python"]
+	path = build-python-src
+	url = https://github.com/cseci/python
+[submodule "host-python"]
+	path = host-python
+	url = https://github.com/cseci/python

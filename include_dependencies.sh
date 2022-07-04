@@ -220,30 +220,58 @@ popd
 }
 
 build_python() {
-	pushd $GR4A_SCRIPT_DIR/python
+	pushd $GR4A_SCRIPT_DIR/host-python
 
 	# Python should be cross-built with the same version that is available on host, if nothing is available, it should be built with the script ./build_host_python
 	git clean -xdf
-	export CURRENT_BUILD=python
-        autoupdate
-	autoreconf
+	export CURRENT_BUILD=host-python
+      #  autoupdate
+	#autoreconf
 	cp ../android_configure.sh .
-	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules
-	sed -i "s/^#zlib/zlib/g" Modules/Setup
-	sed -i "s/^#math/math/g" Modules/Setup
-	sed -i "s/^#time/time/g" Modules/Setup
-	sed -i "s/^#_struct/_struct/g" Modules/Setup
+	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules --without-ensurepip
+#	sed -i "s/^#zlib/zlib/g" Modules/Setup
+#	sed -i "s/^#math/math/g" Modules/Setup
+#	sed -i "s/^#time/time/g" Modules/Setup
+#	sed -i "s/^#_struct/_struct/g" Modules/Setup
 
 	#if [ $ABI == "arm64-v8a" ]; then
 #		LINTL=-lintl
 #	fi
 
-	make -j$JOBS LDFLAGS="$LDFLAGS $LINTL -liconv -lz -lm"  install
+	make -j$JOBS LDFLAGS="$LDFLAGS $LINTL -liconv -lz -lm"  #HOSTPYTHON=$GR4a/build-python/python CROSS_COMPILE=$TARGET_PREFIX CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_PREFIX BUILDARCH=$TARGET_PREFIX 
+	make install
+ 
 	rm -rf $DEV_PREFIX/lib/python3.8/test
 
 	popd
+}
+
+build_cython() {
+	pushd $GR4A_SCRIPT_DIR/cython
+export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.8"
+export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
+export HOSTPYTHON=/usr/bin/python3
+$HOSTPYTHON setup.py build
+$HOSTPYTHON setup.py bdist_wheel
+$HOSTPYTHON setup.py install --prefix=$CROSS_PREFIX
+	popd
 
 }
+
+build_numpy() {
+	pushd $GR4A_SCRIPT_DIR/numpy
+	export CROSS_PREFIX=$DEV_PREFIX
+export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.8"
+export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
+export	_PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_aarch64-linux-android
+export NPY_DISABLE_SVML=1
+export HOSTPYTHON=/usr/bin/python
+$HOSTPYTHON setup.py build
+$HOSTPYTHON setup.py bdist_wheel
+$HOSTPYTHON setup.py install --prefix=$CROSS_PREFIX
+	popd
+}
+
 
 
 #############################################################
