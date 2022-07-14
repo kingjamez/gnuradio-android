@@ -2,14 +2,8 @@
 
 source ./build_system_setup.sh $2
 
-export NDK_VERSION=23.1.7779620
-#export NDK_VERSION=21.3.6528147
-export API=26 # need ABI at least 28 for glob from my tests
 export APP_PLATFORM=${API}
-export ANDROID_SDK_BUILD_TOOLS=30.0.2
 #export JOBS=$(getconf _NPROCESSORS_ONLN)
-export JOBS=16
-export HOST_ARCH=linux-x86_64
 
 if [ $# -lt 1 ]; then
 	ARG1=aarch64
@@ -19,7 +13,7 @@ fi
 
 TARGET_PREFIX=NO_ABI
 export QT_INSTALL_PREFIX=${QT_INSTALL_PREFIX_NO_POSTFIX}
-export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION
+
 
 if [ $ARG1 = "aarch64" ]; then
 ############ aarch64 #########
@@ -30,7 +24,7 @@ export TARGET_BINUTILS=aarch64-linux-android
 export QT_MAJOR_VERSION=${QT_VERSION_STRING:0:1}
 if [ ${QT_MAJOR_VERSION} -eq 6 ]; then
 	export QT_INSTALL_PREFIX=${QT_INSTALL_PREFIX}_arm64_v8a
-	export CMAKE_TOOLCHAIN_FILE=$QT_INSTALL_PREFIX/lib/cmake/Qt6/qt.toolchain.cmake
+	export CMAKE_TOOLCHAIN_FILE=$QT_INSTALL_PREFIX/lib/cmake/Qt${QT_MAJOR_VERSION}/qt.toolchain.cmake
 else
 	export CMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake
 
@@ -46,7 +40,7 @@ export TARGET_PREFIX=armv7a-linux-androideabi
 export TARGET_BINUTILS=arm-linux-androideabi
 if [ ${QT_MAJOR_VERSION} -eq 6 ]; then
 	export QT_INSTALL_PREFIX=${QT_INSTALL_PREFIX}_armv7
-	export CMAKE_TOOLCHAIN_FILE=$QT_INSTALL_PREFIX/lib/cmake/Qt6/qt.toolchain.cmake
+	export CMAKE_TOOLCHAIN_FILE=$QT_INSTALL_PREFIX/lib/cmake/Qt${QT_MAJOR_VERSION}/qt.toolchain.cmake
 else
 	export CMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake
 
@@ -119,6 +113,7 @@ export LDFLAGS_COMMON="-L${SYSROOT}/usr/lib/$TARGET_BINUTILS/$API -L${TOOLCHAIN}
 export LDFLAGS="$LDFLAGS_COMMON"
 # Don't mix up .pc files from your host and build target
 export PKG_CONFIG_PATH=${DEV_PREFIX}/lib/pkgconfig
+export PATH=$QT_INSTALL_PREFIX/bin:$PATH
 
 #deinit_toolchain() {
 #export CC=""

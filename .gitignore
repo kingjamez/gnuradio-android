@@ -4,3 +4,5 @@ downloads
 build*
 !build-python-src
 deps_build_aarch64-linux-android/*
+PyQt5-*
+venv

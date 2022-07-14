@@ -60,6 +60,10 @@ install_jdk() {
 	tar xvf openjdk-14+36_linux-x64_bin.tar.gz
 }
 
+download_py_srcs() {
+wget https://files.pythonhosted.org/packages/28/6c/640e3f5c734c296a7193079a86842a789edb7988dca39eab44579088a1d1/PyQt5-5.15.2.tar.gz
+}
+
 recurse_submodules
 #download_deps
 install_jdk

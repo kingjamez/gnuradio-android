@@ -228,15 +228,7 @@ build_python() {
       #  autoupdate
 	#autoreconf
 	cp ../android_configure.sh .
-	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules --without-ensurepip
-#	sed -i "s/^#zlib/zlib/g" Modules/Setup
-#	sed -i "s/^#math/math/g" Modules/Setup
-#	sed -i "s/^#time/time/g" Modules/Setup
-#	sed -i "s/^#_struct/_struct/g" Modules/Setup
-
-	#if [ $ABI == "arm64-v8a" ]; then
-#		LINTL=-lintl
-#	fi
+	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules --enable-shared
 
 	make -j$JOBS LDFLAGS="$LDFLAGS $LINTL -liconv -lz -lm"  #HOSTPYTHON=$GR4a/build-python/python CROSS_COMPILE=$TARGET_PREFIX CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_PREFIX BUILDARCH=$TARGET_PREFIX 
 	make install
@@ -385,17 +377,17 @@ build_gnuradio3.10() {
 
 	echo "$LDFLAGS_COMMON"
 
-        export LDFLAGS="-lpython3"
+#        export LDFLAGS="-lpython3"
 	build_with_cmake  \
 	  -DPYTHON_EXECUTABLE=/usr/bin/python3 \
 	  -DENABLE_INTERNAL_VOLK=OFF \
+	  -DCMAKE_CROSSCOMPILING=ON\
 	  -DBOOST_ROOT=${PREFIX} \
 	  -DBoost_COMPILER=-clang \
 	  -DBoost_USE_STATIC_LIBS=ON \
 	  -DBoost_ARCHITECTURE=-a32 \
 	  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
-	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/python/python\
-          -DPYTHON_HOME=${DEV_PREFIX}/lib/python3.8\
+	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/build-python/bin/python3\
 	  -DENABLE_DOXYGEN=OFF \
 	  -DENABLE_DEFAULT=ON \
 	  -DENABLE_GNURADIO_RUNTIME=ON \
