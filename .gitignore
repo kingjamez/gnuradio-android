@@ -1,7 +1,8 @@
 toolchain
 downloads
 .vscode/*
-build*
+**/deps*
+**/build*
 !build-python-src
 deps_build_aarch64-linux-android/*
 PyQt5-*
