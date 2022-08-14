@@ -97,9 +97,6 @@
 [submodule "python-for-android"]
 	path = python-for-android
 	url = https://github.com/kivy/python-for-android
-[submodule "numpy"]
-	path = numpy
-	url = https://github.com/numpy/numpy
 [submodule "cython"]
 	path = cython
 	url = https://github.com/cython/cython
@@ -109,3 +106,9 @@
 [submodule "host-python"]
 	path = host-python
 	url = https://github.com/cseci/python
+[submodule "libsigrokdecode"]
+	path = libsigrokdecode
+	url = https://github.com/sigrokproject/libsigrokdecode
+[submodule "glib"]
+	path = glib
+	url = https://github.com/cseci/glib

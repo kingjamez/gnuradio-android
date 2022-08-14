@@ -2,22 +2,24 @@
 source ./android_toolchain.sh $1 $2
 source ./include_dependencies.sh
 
-first_stage() {
+clean() {
 reset_build_env
 create_build_status_file
-##build_python_for_android
-##init_toolchain
-build_libiconv
-build_libffi
-build_libxml2
-build_gettext # no longer needed ?
-build_libiconv # HANDLE CIRCULAR DEP
-#build_openssl
-build_python
 }
-#----
-## build_cython
-## build_numpy
+
+first_stage() {
+#clean
+#build_libiconv
+#build_libffi
+#build_gettext # no longer needed ?
+#build_libiconv # HANDLE CIRCULAR DEP
+##build_openssl
+#build_glib
+#build_libxml2
+build_python
+build_libsigrokdecode
+}
+
 second_stage() {
 build_qwt
 move_qwt_libs
@@ -51,3 +53,5 @@ build_gr-m2k
 
 first_stage
 #second_stage
+
+
