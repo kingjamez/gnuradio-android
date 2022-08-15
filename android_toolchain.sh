@@ -19,6 +19,7 @@ export READELF=$TOOLCHAIN/bin/llvm-readelf
 export LD=$TOOLCHAIN/bin/ld.lld
 export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
 export STRIPLINK=$TOOLCHAIN/bin/${TARGET_BINUTILS}-strip
+export LDD=$TOOLCHAIN/bin/llvm-ldd
 
 export CFLAGS="-I${SYSROOT}/include -I${SYSROOT}/usr/include -I${TOOLCHAIN}/include -I${DEV_PREFIX}/include -fPIC"
 export STAGING_DIR=${DEV_PREFIX}

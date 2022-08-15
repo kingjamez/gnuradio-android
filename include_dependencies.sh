@@ -66,7 +66,11 @@ export CURRENT_BUILD=boost-for-android
 
 #./build-android.sh --boost=1.69.0 --toolchain=llvm --prefix=$(dirname ${PREFIX}) --arch=$ABI --target-version=28 ${ANDROID_NDK_ROOT}
 
-./build-android.sh --boost=1.76.0 --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
+
+#BOOST_VERSION=1.69.0
+BOOST_VERSION=1.76.0
+
+./build-android.sh --boost=$BOOST_VERSION --layout=system --toolchain=llvm --prefix=${PREFIX} --arch=$ABI --target-version=${API} ${ANDROID_NDK_ROOT}
 popd
 }
 
@@ -114,9 +118,9 @@ else
 fi
 echo $NEON_FLAG
 
-
-./bootstrap.sh --enable-single --enable-static --enable-threads \
-  --enable-float  $NEON_FLAG --disable-doc \
+cp ../android_configure.sh .
+./android_configure.sh --enable-single --enable-static --enable-threads \
+  --enable-float  $NEON_FLAG --disable-doc --disable-dependency-tracking --disable-fortran \
   --host=$TARGET_BINUTILS \
   --prefix=$PREFIX
 
@@ -227,20 +231,39 @@ build_python() {
 	export CURRENT_BUILD=host-python
       #  autoupdate
 	#autoreconf
+	export PATH=${GR4A_SCRIPT_DIR}/build-python/bin:$PATH
+	export LD_LIBRARY_PATH=$GR4A_SCRIPT_DIR/build-python/lib:$LD_LIBRARY_PATH
 	cp ../android_configure.sh .
-	ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no ./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules --enable-shared
+	ac_cv_file__dev_ptmx=no  \
+	ac_cv_file__dev_ptc=no \
+	./android_configure.sh  --build=x86_64-linux-gnu --disable-ipv6 --disable-test-modules --enable-shared
 
-	make -j$JOBS LDFLAGS="$LDFLAGS $LINTL -liconv -lz -lm"  #HOSTPYTHON=$GR4a/build-python/python CROSS_COMPILE=$TARGET_PREFIX CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_PREFIX BUILDARCH=$TARGET_PREFIX 
+	#ac_cv_func_pipe2=no ac_cv_func_fdatasync=no ac_cv_func_killpg=no ac_cv_func_waitid=no ac_cv_func_sigaltstack=no 
+
+
+	sed -i "s/^#zlib/zlib/g" Modules/Setup
+	sed -i "s/^#math/math/g" Modules/Setup
+	sed -i "s/^#time/time/g" Modules/Setup
+	sed -i "s/^#_struct/_struct/g" Modules/Setup
+	sed -i "s/^#_datetime/_datetime/g" Modules/Setup
+
+	if [ $ABI == "arm64-v8a" ]; then
+		LINTL=-lintl
+	fi
+
+#$LINTL -liconv 	
+	#LDFLAGS="$LDFLAGS -lz -lm" 
+	make -j$JOBS  #HOSTPYTHON=$GR4a/build-python/python CROSS_COMPILE=$TARGET_PREFIX CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_PREFIX BUILDARCH=$TARGET_PREFIX 
 	make install
  
-	rm -rf $DEV_PREFIX/lib/python3.8/test
+	rm -rf $DEV_PREFIX/lib/python3.10/test
 
 	popd
 }
 
 build_cython() {
 	pushd $GR4A_SCRIPT_DIR/cython
-export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.8"
+export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.10"
 export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
 export HOSTPYTHON=/usr/bin/python3
 $HOSTPYTHON setup.py build
@@ -253,7 +276,7 @@ $HOSTPYTHON setup.py install --prefix=$CROSS_PREFIX
 build_numpy() {
 	pushd $GR4A_SCRIPT_DIR/numpy
 	export CROSS_PREFIX=$DEV_PREFIX
-export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.8"
+export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.10"
 export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
 export	_PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_aarch64-linux-android
 export NPY_DISABLE_SVML=1
@@ -355,16 +378,16 @@ build_libsndfile() {
 
 }
 
-build_pybind() {
-        pushd ${GR4A_SCRIPT_DIR}/pybind11
-        git clean -xdf
-        export CURRENT_BUILD=pybind11
-
-        build_with_cmake  -DPYBIND11_TEST=OFF ../
-        make -j ${JOBS}
-        make install
-        popd
-}
+#build_pybind() {
+#        pushd ${GR4A_SCRIPT_DIR}/pybind11
+#        git clean -xdf
+#        export CURRENT_BUILD=pybind11
+#
+#        build_with_cmake  -DPYBIND11_TEST=OFF ../
+#        make -j ${JOBS}
+#        make install
+#        popd
+#}
 
 build_gnuradio3.10() {
 	pushd ${GR4A_SCRIPT_DIR}/gnuradio
@@ -377,9 +400,10 @@ build_gnuradio3.10() {
 
 	echo "$LDFLAGS_COMMON"
 
-#        export LDFLAGS="-lpython3"
+        export LDFLAGS="$LDFLAGS_COMMON -lpython3"
+	. ${GR4A_SCRIPT_DIR}/venv/bin/activate
+
 	build_with_cmake  \
-	  -DPYTHON_EXECUTABLE=/usr/bin/python3 \
 	  -DENABLE_INTERNAL_VOLK=OFF \
 	  -DCMAKE_CROSSCOMPILING=ON\
 	  -DBOOST_ROOT=${PREFIX} \
@@ -387,7 +411,8 @@ build_gnuradio3.10() {
 	  -DBoost_USE_STATIC_LIBS=ON \
 	  -DBoost_ARCHITECTURE=-a32 \
 	  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
-	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/build-python/bin/python3\
+	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3\
+	  -Dpybind11_DIR=${DEV_PREFIX}/lib/python3.10/site-packages/pybind11/share/cmake/pybind11\
 	  -DENABLE_DOXYGEN=OFF \
 	  -DENABLE_DEFAULT=ON \
 	  -DENABLE_GNURADIO_RUNTIME=ON \
@@ -400,8 +425,11 @@ build_gnuradio3.10() {
           -DENABLE_TESTING=OFF \
           -DENABLE_GR_AUDIO=OFF \
           -DENABLE_PYTHON=ON\
-          -DPythonLibs_DIR=/${DEV_PREFIX}/lib/cmake\
+	  -DENABLE_GR_DIGITAL=OFF\
+	  -DENABLE_GR_FEC=OFF\
+	  -DENABLE_GR_DTV=OFF\
  	   ../ -Wno-dev
+	cp -R ${DEV_PREFIX}/../venv/build/lib/* ${DEV_PREFIX}/lib
 	popd
 }
 
@@ -421,7 +449,7 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DANDROID_ABI=$ABI -DANDROID_ARM_NEON=ON \
   -DANDROID_STL=c++_shared \
   -DANDROID_NATIVE_API_LEVEL=${API} \
-  -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3\
   -DBOOST_ROOT=${PREFIX} \
   -DBoost_COMPILER=-clang \
   -DBoost_USE_STATIC_LIBS=ON \
@@ -451,7 +479,7 @@ build_gr-m2k() {
 	git clean -xdf
 	export CURRENT_BUILD=gr-m2k
 
-	build_with_cmake -DWITH_PYTHON=OFF -DGnuradio_DIR=$DEV_PREFIX/lib/cmake/gnuradio
+	build_with_cmake -DWITH_PYTHON=ON -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3 -DGnuradio_DIR=$DEV_PREFIX/lib/cmake/gnuradio
 
 	popd
 }
@@ -618,20 +646,6 @@ build_libffi() {
         popd
 }
 
-
-build_python_for_android() {
-
-#deinit_toolchain
-#rm -rf $GR4A_SCRIPT_DIR/kivy
-#p4a create --sdk_dir ${ANDROID_SDK_ROOT} --ndk_dir ${ANDROID_NDK_ROOT} --arch ${ABI} --android-api ${API}  --debug --bootstrap sdl2 --storage-dir $GR4A_SCRIPT_DIR/kivy --requirements=python3,numpy,sdl2,pyjnius --dist-name gnuradio
-mkdir -p $DEV_PREFIX/lib/python3.8
-mkdir -p $DEV_PREFIX/include/python3.8
-cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/libs/${ABI}/* $DEV_PREFIX/lib/
-cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/_python_bundle__${ABI}/_python_bundle/* $DEV_PREFIX/lib/python3.8/
-cp -R $GR4A_SCRIPT_DIR/kivy/dists/gnuradio/__pycache__/* $DEV_PREFIX/lib/python3.8/
-cp -R $GR4A_SCRIPT_DIR/kivy/build/other_builds/python3/arm64-v8a__ndk_target_21/python3/Include/* $DEV_PREFIX/include/python3.8/
-
-}
 
 #############################################################
 ### GETTEXT
@@ -800,3 +814,40 @@ build_gr-clenabled() {
 
 
 }
+
+build_libsigrokdecode() {
+        pushd $GR4A_SCRIPT_DIR/libsigrokdecode
+        git clean -xdf
+        export CURRENT_BUILD=libsigrokdecode
+
+        export PATH=${GR4A_SCRIPT_DIR}/build-python/bin:$PATH
+	export LD_LIBRARY_PATH=$GR4A_SCRIPT_DIR/build-python/lib:$LD_LIBRARY_PATH
+	
+	NOCONFIGURE=yes ./autogen.sh
+        android_configure
+
+        popd
+}
+
+build_glib() {
+        pushd $GR4A_SCRIPT_DIR/glib
+        git clean -xdf
+        export CURRENT_BUILD=glib
+
+        #CPPFLAGS=/path/to/standalone/include LDFLAGS=/path/to/standalone/lib ./configure \
+        #--prefix=/path/to/standalone --bindir=$AS_BIN --build=i686-pc-linux-gnu --host=arm-linux-androideabi \
+        #--cache-file=android.cache
+
+echo "glib_cv_stack_grows=no
+glib_cv_uscore=no
+ac_cv_func_posix_getpwuid_r=no
+ac_cv_func_posix_getgrgid_r=no " > android.cache
+
+        NOCONFIGURE=yes ./autogen.sh
+
+        LDFLAGS="$LDFLAGS_COMMON -lffi -lz"
+        android_configure --cache-file=android.cache --with-libiconv=gnu --disable-dtrace --disable-xattr --disable-systemtap --with-pcre=internal --enable-libmount=no
+
+        popd
+}
+
