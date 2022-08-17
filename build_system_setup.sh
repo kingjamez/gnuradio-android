@@ -1,7 +1,8 @@
 #!/bin/bash
+set -x
 
 ############### SYSTEM SPECIFIC DEFINES ############
-export USER_DIR=$2
+export USER_DIR=$USER
 export ANDROID_SDK_ROOT=$HOME/Android/Sdk
 export CMAKE=$HOME/cmake-3.23.2-linux-x86_64/bin/cmake
 export QT_VERSION_STRING=5.15.2
@@ -28,7 +29,7 @@ export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION
 export APP_PLATFORM=${API}
 #export JOBS=$(getconf _NPROCESSORS_ONLN)
 
-if [ $# -lt 1 ]; then
+if [ -z "$ARCH" ]; then
 	ARG1=aarch64
 else
 	ARG1=$1

@@ -1,0 +1,16 @@
+unset CC
+unset CXX
+unset CPP
+unset AR
+unset AS
+unset NM
+unset STRIP
+unset READELF
+unset LD
+unset RANLIB
+unset STRIPLINK
+unset CFLAGS
+unset CPP_FLAGS
+unset LDFLAGS
+unset SYSROOT
+unset PKG_CONFIG_PATH

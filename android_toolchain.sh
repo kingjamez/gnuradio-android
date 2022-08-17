@@ -1,8 +1,6 @@
 #!/bin/bash
 
-source ./build_system_setup.sh $1 $2
-
-
+source ./build_system_setup.sh $ARCH
 
 # Non-exhaustive lists of compiler + binutils
 # Depending on what you compile, you might need more binutils than that
@@ -30,24 +28,6 @@ export LDFLAGS="$LDFLAGS_COMMON"
 export PKG_CONFIG_PATH=${DEV_PREFIX}/lib/pkgconfig
 export PATH=$QT_INSTALL_PREFIX/bin:$PATH
 
-#deinit_toolchain() {
-#export CC=""
-#export CXX=""
-#export CPP=""
-#export AR=""
-#export AS=""
-#export NM=""
-#export STRIP=""
-#export READELF=""
-#export LD=""
-#export RANLIB=""
-#export STRIPLINK=""
-#export CFLAGS=""
-#export CPP_FLAGS=""
-#export LDFLAGS=""
-#export SYSROOT=""
-#export PKG_CONFIG_PATH=""
-#}
 
 
 echo ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT

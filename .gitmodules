@@ -73,9 +73,6 @@
 [submodule "qwt"]
 	path = qwt
 	url = https://github.com/cseci/qwt
-[submodule "python"]
-	path = python
-	url = https://github.com/cseci/python
 [submodule "spdlog"]
 	path = spdlog
 	url = https://github.com/gabime/spdlog
@@ -94,12 +91,6 @@
 [submodule "portaudio"]
 	path = portaudio
 	url = https://github.com/PortAudio/portaudio
-[submodule "python-for-android"]
-	path = python-for-android
-	url = https://github.com/kivy/python-for-android
-[submodule "cython"]
-	path = cython
-	url = https://github.com/cython/cython
 [submodule "build-python"]
 	path = build-python-src
 	url = https://github.com/cseci/python
@@ -115,3 +106,6 @@
 [submodule "numpy"]
 	path = numpy
 	url = https://github.com/numpy/numpy
+[submodule "gr-flowgraph-runner"]
+	path = gr-flowgraph-runner
+	url = https://github.com/adisuciu/gr-flowgraph-runner

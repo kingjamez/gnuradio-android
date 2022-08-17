@@ -3,6 +3,7 @@ downloads
 .vscode/*
 **/deps*
 **build**/
+tmp*
 !build-python-src
 build_aarch64-linux-android*
 PyQt5-*
