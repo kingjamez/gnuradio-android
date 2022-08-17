@@ -30,7 +30,7 @@
 	url = https://github.com/bastibl/gr-osmosdr.git
 [submodule "gr-grand"]
 	path = gr-grand
-	url = https://github.com/bastibl/gr-grand.git
+	url = https://github.com/adisuciu/gr-grand.git
 [submodule "uhd"]
 	path = uhd
 	url = https://github.com/bastibl/uhd.git

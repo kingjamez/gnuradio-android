@@ -541,6 +541,8 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_COMPILER=-clang \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_ARCHITECTURE=-a32 \
+  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3\
+  -Dpybind11_DIR=${DEV_PREFIX}/lib/python3.10/site-packages/pybind11/share/cmake/pybind11\
   -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/$ABI/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
     ../
