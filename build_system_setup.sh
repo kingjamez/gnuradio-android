@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 ############### SYSTEM SPECIFIC DEFINES ############
 export USER_DIR=$USER

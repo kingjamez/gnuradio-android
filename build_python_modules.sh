@@ -128,10 +128,19 @@ install_venv () {
 	popd
 }
 
+build_venv() {
+	create_venv
+	build_numpy
+	build_pyqt5-sip
+	build_pyqt5
+	install_venv
+}
+
 #install_deps
 #build_python
 #create_venv
 #build_numpy
-build_pyqt5-sip
+#build_pyqt5-sip
 #build_pyqt5
-install_venv
+#install_venv
+$@
