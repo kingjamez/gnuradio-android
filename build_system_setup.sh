@@ -23,7 +23,10 @@ export JOBS=16
 export HOST_ARCH=linux-x86_64
 export ANDROID_SDK_BUILD_TOOLS=30.0.2
 export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION
+export PYTHON_VERSION_MINOR=8
 
+export PYTHON_VERSION=3.$PYTHON_VERSION_MINOR
+export LD_LIBRARY_PATH=$GR4A_SCRIPT_DIR/build-python/lib
 
 export APP_PLATFORM=${API}
 #export JOBS=$(getconf _NPROCESSORS_ONLN)
@@ -31,7 +34,7 @@ export APP_PLATFORM=${API}
 if [ -z "$ARCH" ]; then
 	ARG1=aarch64
 else
-	ARG1=$1
+	ARG1=$ARCH
 fi
 
 TARGET_PREFIX=NO_ABI

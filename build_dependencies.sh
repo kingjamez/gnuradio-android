@@ -260,34 +260,8 @@ build_python() {
 	make -j$JOBS  #HOSTPYTHON=$GR4a/build-python/python CROSS_COMPILE=$TARGET_PREFIX CROSS_COMPILE_TARGET=yes HOSTARCH=$TARGET_PREFIX BUILDARCH=$TARGET_PREFIX 
 	make install
  
-	rm -rf $DEV_PREFIX/lib/python3.10/test
+#	rm -rf $DEV_PREFIX/lib/python$PYTHON_VERSION/test
 
-	popd
-}
-
-build_cython() {
-	pushd $GR4A_SCRIPT_DIR/cython
-export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.10"
-export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
-export HOSTPYTHON=/usr/bin/python3
-$HOSTPYTHON setup.py build
-$HOSTPYTHON setup.py bdist_wheel
-$HOSTPYTHON setup.py install --prefix=$CROSS_PREFIX
-	popd
-
-}
-
-build_numpy() {
-	pushd $GR4A_SCRIPT_DIR/numpy
-	export CROSS_PREFIX=$DEV_PREFIX
-export	CFLAGS="$CFLAGS -I${CROSS_PREFIX}/usr/include -I${CROSS_PREFIX}/usr/include/python3.10"
-export	LDFLAGS="$LDFLAGS -L${CROSS_PREFIX}/usr/lib"
-export	_PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_aarch64-linux-android
-export NPY_DISABLE_SVML=1
-export HOSTPYTHON=/usr/bin/python
-$HOSTPYTHON setup.py build
-$HOSTPYTHON setup.py bdist_wheel
-$HOSTPYTHON setup.py install --prefix=$CROSS_PREFIX
 	popd
 }
 
@@ -351,18 +325,6 @@ build_spdlog() {
 
 }
 
-build_portaudio() {
-        export CURRENT_BUILD=portaudio
-        pushd ${GR4A_SCRIPT_DIR}/${CURRENT_BUILD}
-	git clean -xdf
-
-        LDFLAGS="$LDFLAGS_COMMON"
-        android_configure --enable-static=no --enable-shared=yes --with-alsa=on --with-oss=on
-
-        popd
-
-}
-
 build_libsndfile() {
 
 	pushd ${GR4A_SCRIPT_DIR}/libsndfile
@@ -382,16 +344,16 @@ build_libsndfile() {
 
 }
 
-#build_pybind() {
-#        pushd ${GR4A_SCRIPT_DIR}/pybind11
-#        git clean -xdf
-#        export CURRENT_BUILD=pybind11
-#
-#        build_with_cmake  -DPYBIND11_TEST=OFF ../
-#        make -j ${JOBS}
-#        make install
-#        popd
-#}
+build_pybind() {
+        pushd ${GR4A_SCRIPT_DIR}/pybind11
+        git clean -xdf
+        export CURRENT_BUILD=pybind11
+
+        build_with_cmake  -DPYBIND11_TEST=OFF ../
+        make -j ${JOBS}
+        make install
+        popd
+}
 
 build_gnuradio3.10() {
 	pushd ${GR4A_SCRIPT_DIR}/gnuradio
@@ -416,7 +378,6 @@ build_gnuradio3.10() {
 	  -DBoost_ARCHITECTURE=-a32 \
 	  -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
 	  -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3\
-	  -Dpybind11_DIR=${DEV_PREFIX}/lib/python3.10/site-packages/pybind11/share/cmake/pybind11\
 	  -DENABLE_DOXYGEN=OFF \
 	  -DENABLE_DEFAULT=ON \
 	  -DENABLE_GNURADIO_RUNTIME=ON \
@@ -429,11 +390,13 @@ build_gnuradio3.10() {
           -DENABLE_TESTING=OFF \
           -DENABLE_GR_AUDIO=OFF \
           -DENABLE_PYTHON=ON\
-	  -DENABLE_GR_DIGITAL=ON\
-	  -DENABLE_GR_FEC=ON\
-	  -DENABLE_GR_DTV=ON\
+	  -DENABLE_GR_DIGITAL=OFF\
+	  -DENABLE_GR_CHANNELS=OFF\
+	  -DENABLE_GR_FEC=OFF\
+	  -DENABLE_GR_DTV=OFF\
  	   ../ -Wno-dev
-	cp -R ${DEV_PREFIX}/../venv/build/lib/* ${DEV_PREFIX}/lib
+	  #-Dpybind11_DIR=${DEV_PREFIX}/lib/python$PYTHON_VERSION/site-packages/pybind11/share/cmake/pybind11\
+#	cp -R ${DEV_PREFIX}/../venv/build/lib/* ${DEV_PREFIX}/lib
 	popd
 }
 
@@ -542,10 +505,11 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=${PREFIX} \
   -DBoost_USE_STATIC_LIBS=ON \
   -DBoost_ARCHITECTURE=-a32 \
   -DPYTHON_EXECUTABLE=${GR4A_SCRIPT_DIR}/venv/cross/bin/python3\
-  -Dpybind11_DIR=${DEV_PREFIX}/lib/python3.10/site-packages/pybind11/share/cmake/pybind11\
   -DGnuradio_DIR=${GR4A_SCRIPT_DIR}/toolchain/$ABI/lib/cmake/gnuradio \
   -DCMAKE_FIND_ROOT_PATH=${PREFIX} \
+  -DCMAKE_VERBOSE_MAKEFILE=ON \
     ../
+  #-Dpybind11_DIR=${DEV_PREFIX}/lib/python$PYTHON_VERSION/site-packages/pybind11/share/cmake/pybind11\
 
 make -j ${JOBS}
 make install
@@ -883,29 +847,29 @@ echo This works
 }
 
 second_stage() {
-build_qwt
-move_qwt_libs
-build_boost
-move_boost_libs
-build_libzmq
-build_fftw
-build_thrift
-build_libgmp
-build_libusb
-build_libiio
-build_libad9361
-build_libm2k
-build_hackrf
-# build_uhd
-build_rtl-sdr
-build_spdlog
-build_libsndfile
-## #build_portaudio # not sure if this will work ??
-build_volk
-build_gnuradio3.10
+#build_qwt
+#move_qwt_libs
+#build_boost
+#move_boost_libs
+#build_libzmq
+#build_fftw
+##build_thrift
+#build_libgmp
+#build_libusb
+#build_libiio
+#build_libad9361
+#build_libm2k
+##build_hackrf
+##build_uhd
+##build_rtl-sdr
+#build_spdlog
+#build_libsndfile
+#build_volk
+#build_pybind
+#build_gnuradio3.10
 build_gr-m2k
 #build_gr-osmosdr
-build_gr-grand  # - need to be ported to gr 3.10 or repull ?
+build_gr-grand 
 # build_gr-sched
 # build_gr-ieee-802-15-4
 # build_gr-ieee-802-11

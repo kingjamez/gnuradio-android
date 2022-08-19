@@ -1,7 +1,11 @@
 source build_system_setup.sh
 
+set -x
+set -e 
+
 build_python() {
 	pushd build-python-src
+	git clean -xdf
 	./configure --disable-ipv6 --enable-optimizations --with-ensurepip=install --enable-shared --prefix="$GR4A_SCRIPT_DIR/build-python"
 	make -j $JOBS
 	make install
@@ -15,27 +19,26 @@ create_venv() {
 	export PATH=${GR4A_SCRIPT_DIR}/build-python/bin:$PATH
 	export LD_LIBRARY_PATH=$GR4A_SCRIPT_DIR/build-python/lib:$LD_LIBRARY_PATH
 	
-	./build-python/bin/pip3 install crossenv
+	pip install crossenv
 
-	if [ -d venv ]; then
-		return 0;
+	if [ ! -d venv ]; then
+		./build-python/bin/python3 -m crossenv $DEV_PREFIX/bin/python$PYTHON_VERSION venv
 	fi
 
-	./build-python/bin/python3 -m crossenv $DEV_PREFIX/bin/python3.10 venv
 	. $GR4A_SCRIPT_DIR/venv/bin/activate
 #	build-pip install setuptools --upgrade
-#	build-pip install numpy==1.23.2 # install python only on build-pip so crosscompile checks for numpy pass
-#	cross-pip install numpy==1.23.2 
+	build-pip install numpy==1.17.4 # install python only on build-pip so crosscompile checks for numpy pass
+#	cross-pip install numpy==1.17.4 
 
 	cross-pip install pytest
 #	build-pip install pybind11
-	cross-pip install pybind11
+#	cross-pip install pybind11==2.4.3
 	build-pip install packaging
 	cross-pip install packaging
 	build-pip install cython
 	cross-pip install cython
-	build-pip install mako
-	cross-pip install mako
+	build-pip install mako==1.1.0
+	cross-pip install mako==1.1.0
 	build-pip install sip
 	cross-pip install sip
 	build-pip install pyqt-builder
@@ -43,6 +46,8 @@ create_venv() {
 	
 	build-pip install pyqt5-sip
 	cross-pip install pyqt5-sip
+
+	rm -rf venv/cross/bin/sip-*
 	cp venv/build/bin/sip-* venv/cross/bin/
 	#patch sip-build -- change shebang from build to cross
 	sed -i '0,/build/s/build/cross/' venv/cross/bin/sip-*
@@ -51,6 +56,8 @@ create_venv() {
 }
 build_pyqt5-sip() {
 	pushd $GR4A_SCRIPT_DIR
+	. $GR4A_SCRIPT_DIR/venv/bin/activate
+	
 	source android_toolchain.sh	
 	popd
 	pushd $GR4A_SCRIPT_DIR/PyQt5_sip-12.11.0
@@ -58,9 +65,18 @@ build_pyqt5-sip() {
 	LDFLAGS='-lpython3' cross-python setup.py bdist
 	
 	#hack as i don't know how to disable egg install
-	mkdir -p /home/adi/src/gnuradio-android/venv/cross/lib/python3.10/PyQt5/
-	cp build/lib.linux-aarch64-cpython-310/PyQt5/sip.cpython-310.so /home/adi/src/gnuradio-android/venv/cross/lib/python3.10/PyQt5/
+	mkdir -p /home/adi/src/gnuradio-android/venv/cross/lib/python$PYTHON_VERSION/PyQt5/
+	cp build/lib.linux-aarch64-3.$PYTHON_VERSION_MINOR/PyQt5/sip.cpython-3$PYTHON_VERSION_MINOR.so /home/adi/src/gnuradio-android/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/PyQt5/
 	popd
+}
+
+build_pybind11() {
+	. $GR4A_SCRIPT_DIR/venv/bin/activate
+	pushd $GR4A_SCRIPT_DIR/pybind11
+	cross-python setup.py build
+	popd
+	
+
 }
 
 build_pyqt5() {
@@ -75,13 +91,13 @@ build_pyqt5() {
 	       	--no-tools\
 	       	--no-dbus-python --no-qml-plugin\
 	       	--no-designer-plugin\
-	       	--target-dir ${DEV_PREFIX}/lib/python3.10\
+	       	--target-dir ${DEV_PREFIX}/lib/python$PYTHON_VERSION\
 	       	--build-dir ./build\
 	       	--qmake=$QMAKE\
 		--qmake-setting ANDROID_NDK_PLATFORM=android-30\
 		--qmake-setting ANDROID_PLATFORM=android-30\
 	       	--qmake-setting ANDROID_ABIS=arm64-v8a\
-	       	--qmake-setting QMAKE_LFLAGS="-L$DEV_PREFIX/lib -lpython3.10"\
+	       	--qmake-setting QMAKE_LFLAGS="-L$DEV_PREFIX/lib -lpython$PYTHON_VERSION"\
 	       	--verbose\
 	       	--no-make\
 	       	--qt-shared\
@@ -112,8 +128,9 @@ build_numpy() {
 	git clean -xdf
 	LDFLAGS='-lpython3' MATHLIB=m cross-python setup.py build
 	cross-python setup.py install
+	cp -R build/lib.linux-aarch64-3.$PYTHON_VERSION_MINOR/numpy* /home/adi/src/gnuradio-android/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/site-packages
 
-	build-pip install numpy==1.22.4
+#	build-pip install numpy==1.22.4
 }
 
 install_deps() {
@@ -131,11 +148,13 @@ install_venv () {
 build_venv() {
 	create_venv
 	build_numpy
+#	build-pybind11
 	build_pyqt5-sip
 	build_pyqt5
 	install_venv
 }
 
+export LD_LIBRARY_PATH=$GR4A_SCRIPT_DIR/build-python/lib
 #install_deps
 #build_python
 #create_venv
