@@ -105,7 +105,7 @@
 	url = https://github.com/cseci/glib
 [submodule "numpy"]
 	path = numpy
-	url = https://github.com/numpy/numpy
+	url = https://github.com/cseci/numpy
 [submodule "gr-flowgraph-runner"]
 	path = gr-flowgraph-runner
 	url = https://github.com/adisuciu/gr-flowgraph-runner

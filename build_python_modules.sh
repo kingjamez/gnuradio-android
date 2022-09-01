@@ -1,3 +1,4 @@
+#!/bin/bash
 source build_system_setup.sh
 
 set -x
@@ -26,7 +27,7 @@ create_venv() {
 	fi
 
 	. $GR4A_SCRIPT_DIR/venv/bin/activate
-#	build-pip install setuptools --upgrade
+	build-pip install setuptools --upgrade
 	build-pip install numpy==1.17.4 # install python only on build-pip so crosscompile checks for numpy pass
 #	cross-pip install numpy==1.17.4 
 
@@ -54,6 +55,16 @@ create_venv() {
 
 	popd
 }
+
+download_pyqt5() {
+	pushd $GR4A_SCRIPT_DIR
+
+	wget https://files.pythonhosted.org/packages/39/5f/fd9384fdcb9cd0388088899c110838007f49f5da1dd1ef6749bfb728a5da/PyQt5_sip-12.11.0.tar.gz
+	wget https://files.pythonhosted.org/packages/e1/57/2023316578646e1adab903caab714708422f83a57f97eb34a5d13510f4e1/PyQt5-5.15.7.tar.gz
+	tar xvf PyQt5_sip-12.11.0.tar.gz
+	tar xvf PyQt5-5.15.7.tar.gz
+}
+
 build_pyqt5-sip() {
 	pushd $GR4A_SCRIPT_DIR
 	. $GR4A_SCRIPT_DIR/venv/bin/activate
@@ -65,8 +76,8 @@ build_pyqt5-sip() {
 	LDFLAGS='-lpython3' cross-python setup.py bdist
 	
 	#hack as i don't know how to disable egg install
-	mkdir -p /home/adi/src/gnuradio-android/venv/cross/lib/python$PYTHON_VERSION/PyQt5/
-	cp build/lib.linux-aarch64-3.$PYTHON_VERSION_MINOR/PyQt5/sip.cpython-3$PYTHON_VERSION_MINOR.so /home/adi/src/gnuradio-android/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/PyQt5/
+	mkdir -p /home/$USER/src/gnuradio-android/venv/cross/lib/python$PYTHON_VERSION/PyQt5/
+	cp build/lib.linux-aarch64-cpython-3$PYTHON_VERSION_MINOR/PyQt5/sip.cpython-3$PYTHON_VERSION_MINOR.so $GR4A_SCRIPT_DIR/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/PyQt5/
 	popd
 }
 
@@ -85,7 +96,7 @@ build_pyqt5() {
 	popd
 	pushd $GR4A_SCRIPT_DIR/PyQt5-5.15.7
 	ANDROID_NDK_PLATFORM=android-30\
-		/home/adi/src/gnuradio-android/venv/cross/bin/sip-build\
+		/home/$USER/src/gnuradio-android/venv/cross/bin/sip-build\
 	       	--confirm-license\
 	       	--jobs $JOBS\
 	       	--no-tools\
@@ -128,15 +139,16 @@ build_numpy() {
 	git clean -xdf
 	LDFLAGS='-lpython3' MATHLIB=m cross-python setup.py build
 	cross-python setup.py install
-	cp -R build/lib.linux-aarch64-3.$PYTHON_VERSION_MINOR/numpy* /home/adi/src/gnuradio-android/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/site-packages
+
+	# not sure if this is needed here
+	mkdir -p $GR4A_SCRIPT_DIR/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/site-packages
+	cp -R build/lib.linux-aarch64-cpython-3$PYTHON_VERSION_MINOR/numpy* $GR4A_SCRIPT_DIR/venv/cross/lib/python3.$PYTHON_VERSION_MINOR/site-packages
 
 #	build-pip install numpy==1.22.4
 }
 
 install_deps() {
-
-	sudo apt-get install build-essential zlib1g-dev libbz2-dev liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev libgdbm-dev liblzma-dev tk8.6-dev lzma lzma-dev libgdbm-dev
-	tar xvf PyQt5-5.15.2.tar.gz
+	sudo apt-get install -y build-essential zlib1g-dev libbz2-dev liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev libgdbm-dev liblzma-dev tk8.6-dev lzma lzma-dev libgdbm-dev
 }
 install_venv () {
 	pushd $GR4A_SCRIPT_DIR
