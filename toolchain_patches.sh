@@ -1,5 +1,6 @@
+#!/bin/bash
 set -xe
-source ./android_toolchain.sh $1 $2
+source ./android_toolchain.sh $ARCH
 
 install_android_sdk() {
 	pushd $GR4A_SCRIPT_DIR/download
@@ -104,3 +105,4 @@ patch_sdk_build_tools_revision() {
 #install_jdk
 #rm_libs
 #create_strip_symlink
+$@
