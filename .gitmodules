@@ -109,3 +109,9 @@
 [submodule "gr-flowgraph-runner"]
 	path = gr-flowgraph-runner
 	url = https://github.com/adisuciu/gr-flowgraph-runner
+[submodule "volk_x86"]
+	path = volk_x86
+	url = https://github.com/gnuradio/volk
+[submodule "gnuradio_x86"]
+	path = gnuradio_x86
+	url = https://github.com/gnuradio/gnuradio
