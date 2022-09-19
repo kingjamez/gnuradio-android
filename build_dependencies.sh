@@ -390,10 +390,10 @@ build_gnuradio3.10() {
           -DENABLE_TESTING=OFF \
           -DENABLE_GR_AUDIO=OFF \
           -DENABLE_PYTHON=ON\
-	  -DENABLE_GR_DIGITAL=OFF\
-	  -DENABLE_GR_CHANNELS=OFF\
-	  -DENABLE_GR_FEC=OFF\
-	  -DENABLE_GR_DTV=OFF\
+	  -DENABLE_GR_DIGITAL=ON\
+	  -DENABLE_GR_CHANNELS=ON\
+	  -DENABLE_GR_FEC=ON\
+	  -DENABLE_GR_DTV=ON\
  	   ../ -Wno-dev
 	  #-Dpybind11_DIR=${DEV_PREFIX}/lib/python$PYTHON_VERSION/site-packages/pybind11/share/cmake/pybind11\
 #	cp -R ${DEV_PREFIX}/../venv/build/lib/* ${DEV_PREFIX}/lib
